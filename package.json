@@ -16,13 +16,12 @@
     "hapi-auth-cookie": "^10.0.0",
     "hapi-mongodb": "^9.0.2",
     "mongoose": "^5.12.3",
-    "hapi-auth-jwt2": "^10.2.0"
-  },
-  "devDependencies": {
+    "hapi-auth-jwt2": "^10.2.0",
     "@hapi/boom": "^9.1.2",
     "@hapi/joi": "^17.1.1",
     "bcrypt": "^5.0.1",
     "jsonwebtoken": "^8.5.1"
+
   },
   "engines": {
     "node": "14.15.3"
