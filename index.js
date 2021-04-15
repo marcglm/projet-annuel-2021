@@ -96,13 +96,13 @@ const start = async () => {
         method: 'GET',
         path: PATH_BASE+'/',
         config : {
-            auth : 'restricted'
+            auth : false
         },
         handler: (req, h) => {
-            /*console.log("request.headers.authorization ::: ", req.headers.authorization);
-            const response = h.response({ text: 'You used a Token!' });
+            console.log('hello world');
+           /* const response = h.response({ text: 'You used a Token!' });
             response.header("Authorization", req.headers.authorization);*/
-            return 'hello world';
+            return h.response('hello world');
         }
     });
 
