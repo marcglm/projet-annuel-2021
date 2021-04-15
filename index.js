@@ -190,15 +190,11 @@ const start = async () => {
 
             const payload = req.payload;
 
-            //console.log('email'+payload.email+'mdp:'+payload.password);
-
             const userByEmail = await User.findOne({ email: payload.email });
             if (!userByEmail || (userByEmail.email !== payload.email || userByEmail.password !== payload.password)  ) return Boom.badRequest('Email or password wrong');
             let token = createToken(userByEmail);
 
             return { token };
-
-           // console.log('emailUserByEmail'+userByEmail.email+'mdpUserByEmail:'+userByEmail.password);
         }
     });
 
