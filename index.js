@@ -17,8 +17,9 @@ const { registerValidation, loginValidation } = require('./models/Validation');
 
 
 //Constantes
+const PORT = process.env.PORT || '8080'
 const server = Hapi.server({
-    port: 3000,
+    port: PORT,
     host: 'localhost'
 });
 
