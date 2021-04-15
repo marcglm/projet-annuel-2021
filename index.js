@@ -25,7 +25,7 @@ const server = Hapi.server({
 const User = require('./models/User');
 
 mongoose.connect(
-    process.env.MONGO_URL,
+    ''+process.env.MONGO_URL,
     {
         useNewUrlParser: true,
         useUnifiedTopology: true,
