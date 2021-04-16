@@ -12,16 +12,45 @@ const Boom = require("@hapi/boom");
 // validation
 const { registerValidation, loginValidation } = require('./models/Validation');
 
-const { hashPassword, createToken } = require('./util.js');
+//const { hashPassword, createToken } = require('./util.js');
 
 //Constantes
-const PORT = process.env.PORT || '3000'
+const PORT = process.env.PORT || '8080'
 const server = Hapi.server({
-    port: PORT,
+    port: '3000',
     host: 'localhost'
 });
 
+//Fonction Haschage de password
+const hashPassword = (password, cb) =>{
+    // Generate a salt at level 10 strength
+    bcrypt.genSalt(10, (err, salt) => {
+        bcrypt.hash(password, salt, (err, hash) => {
+            return cb(err, hash);
+        });
+    });
+}
+
+const createToken = (user)=>{
+    /* let scopes;
+     // Check if the user object passed in
+     // has admin set to true, and if so, set
+     // scopes to admin
+     if (user.admin) {
+         scopes = 'admin';
+     }*/
+    // Sign the JWT
+    return jwt.sign(
+        { id: user._id/*, scope: scopes*/ },
+        ''+process.env.TOKEN,
+        { algorithm: 'HS256', expiresIn: "1h" } );
+
+}
+
+
 const User = require('./models/User');
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 mongoose.connect(
     ''+process.env.MONGO_URL,
@@ -65,15 +94,27 @@ const start = async () => {
 
     server.route({
         method: 'GET',
-        path: PATH_BASE+'/',
+        path: PATH_BASE+'/public',
         config : {
             auth : false
         },
         handler: (req, h) => {
-            console.log('hello world');
+            console.log('PAGE PUBLIC');
            /* const response = h.response({ text: 'You used a Token!' });
             response.header("Authorization", req.headers.authorization);*/
-            return h.response('hello world');
+            return h.response('Page sans Token Requis');
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: PATH_BASE+'/restricted',
+        config : {
+            auth : 'restricted'
+        },
+        handler: (req, h) => {
+            console.log('PAGE PRIVEE');
+            return h.response('Page Token Requis');
         }
     });
 
@@ -81,47 +122,38 @@ const start = async () => {
     //TO DO : A NETTOYER
     server.route({
         method: 'POST',
-        path: PATH_BASE+'/adduser',
+        path: PATH_BASE + '/adduser',
         config: {
-            auth : false
+            auth: false
         },
         handler: async (req, res) => {
             // validate the user
+            console.log('USER VALID');
+
             const {error} = registerValidation(req.payload);
 
             // throw validation errors
             if (error) return Boom.badRequest(error.details[0].message);
-            const isEmailExist = await User.findOne({ email: req.payload.email });
+            const isEmailExist = await User.findOne({email: req.payload.email});
 
             // throw error when email already registered
             //TO DO : Améliorer le message d'erreur
             if (isEmailExist) return res.response('Email already exists').code(400);
             // hash the password
-            const user = new User();
-            try {
-                //TO DO : REFRACTOR 132 to 146
-               hashPassword(req.payload.password, (err, hash) => {
+            let user = new User();
+            user.email = req.payload.email;
+            hashPassword(req.payload.password, (err, hash) => {
+                if (err) {
+                    throw Boom.badRequest(err);
+                }
+                user.password = hash;
+                user.save((err, user) => {
                     if (err) {
-
                         throw Boom.badRequest(err);
-
                     }
-                    user.password = hash;
-                    user.username = req.payload.username;
-                    user.email=req.payload.email;
-                    user.save((err, user) => {
-                        if (err) {
-                            console.log('BAD REQUEST');
-                            throw Boom.badRequest(err);
-                        }
-                    });
                 });
-                console.log(user.email+ '  '+ user.password);
-                return res.response({ id_token: createToken(user), username: user.username, email: user.email, password:user.password}).code(201);
-            } catch(error) {
-                return res.response(error).code(400);
-            }
-
+            });
+            return res.response({id_token: createToken(user)}).code(201);
         }
     });
 
