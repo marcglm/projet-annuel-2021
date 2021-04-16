@@ -5,19 +5,17 @@ const env = require('dotenv');
 env.config();
 const AuthBearer = require('hapi-auth-bearer-token');
 const HapiAuthJwt2 = require('hapi-auth-jwt2');
-const HapiMongo = require('hapi-mongodb');
 const mongoose = require("mongoose");
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const Boom = require("@hapi/boom");
 
 
 // validation
 const { registerValidation, loginValidation } = require('./models/Validation');
 
+const { hashPassword, createToken } = require('./util.js');
 
 //Constantes
-const PORT = process.env.PORT || '8080'
+const PORT = process.env.PORT || '3000'
 const server = Hapi.server({
     port: PORT,
     host: 'localhost'
@@ -33,35 +31,7 @@ mongoose.connect(
     },
     () => console.log("connected to db")
 );
-
-//Fonction Haschage de password
-function hashPassword(password, cb) {
-    // Generate a salt at level 10 strength
-    bcrypt.genSalt(10, (err, salt) => {
-        bcrypt.hash(password, salt, (err, hash) => {
-            return cb(err, hash);
-        });
-    });
-}
-
 const PATH_BASE = '/serveur/PA2021';
-
-//Fonction qui créée un token
-function createToken(user) {
-   /* let scopes;
-    // Check if the user object passed in
-    // has admin set to true, and if so, set
-    // scopes to admin
-    if (user.admin) {
-        scopes = 'admin';
-    }*/
-    // Sign the JWT
-    return jwt.sign(
-        { id: user._id/*, scope: scopes*/ },
-        process.env.TOKEN,
-        { algorithm: 'HS256', expiresIn: "1h" } );
-
-}
 const validate =  async function (decoded, request, h) {
 
     if (!User.findById(decoded.id)) { // verifie que l'utilisateur existe bien
@@ -130,13 +100,14 @@ const start = async () => {
             const user = new User();
             try {
                 //TO DO : REFRACTOR 132 to 146
-                hashPassword(req.payload.password, (err, hash) => {
+               hashPassword(req.payload.password, (err, hash) => {
                     if (err) {
 
                         throw Boom.badRequest(err);
 
                     }
                     user.password = hash;
+                    user.username = req.payload.username;
                     user.email=req.payload.email;
                     user.save((err, user) => {
                         if (err) {
@@ -146,7 +117,7 @@ const start = async () => {
                     });
                 });
                 console.log(user.email+ '  '+ user.password);
-                return res.response({ id_token: createToken(user), email: user.email, password:user.password}).code(201);
+                return res.response({ id_token: createToken(user), username: user.username, email: user.email, password:user.password}).code(201);
             } catch(error) {
                 return res.response(error).code(400);
             }
