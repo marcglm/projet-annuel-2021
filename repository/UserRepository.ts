@@ -7,7 +7,7 @@ export default class UserRepository{
     static async findById(id: string): Promise<User> {
         let call = db.get('users');
         return await call.findOne({
-            email: id
+            _id: id
         });
     }
 

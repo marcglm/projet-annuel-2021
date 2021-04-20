@@ -1,27 +1,25 @@
 import {badRequest, Boom} from "@hapi/boom";
-import {hashPassword} from "../../passwordManagement";
+import {encodedPassword} from "../../security/passwordManagement";
 import {registerValidation} from "../../utils/Validation";
 import UserRepository from "../../repository/UserRepository";
 import User from "../../models/User";
+import {UserAlreadyExistedError, UserRequiredCredentialsError} from "../../Errors/UserError";
 
 export const createUser = async (req):Promise<any> => {
-    console.log("---------------------", req.payload)
+    //console.log("-----UUTILISATEUR CREE------", req.payload)
+
     const {error} = registerValidation(req.payload);
 
-    // throw validation errors
-    if (error) return badRequest(error.details[0].message);
+    if (error) throw new UserRequiredCredentialsError(error);
 
     const isEmailExist = await UserRepository.findByEmail(req.payload.email);
+    if (isEmailExist) throw new UserAlreadyExistedError("Email already exist");
 
-    // throw error when email already registered
-    //TO DO : Améliorer le message d'erreur
-    if (isEmailExist) return badRequest('Email already exists');
-    const password = await hashPassword(req.payload.password)
-    // hash the password
+    const hashPassword = await encodedPassword(req.payload.password)
     let user:User = {
        email:req.payload.email,
-        password
+        password: hashPassword
     }
-    console.log("message" , user)
+    //console.log("message" , user)
     return await UserRepository.insert(user);
 }

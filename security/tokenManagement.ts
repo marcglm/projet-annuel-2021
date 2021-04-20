@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+import JwtHapi = require("@hapi/jwt");
 
 const createToken = (user)=>{
     /* let scopes;
@@ -16,6 +17,16 @@ const createToken = (user)=>{
 
 }
 
-module.exports = {
-    createToken,
-};
+export const generateHapiToken = (user) =>{
+
+    return JwtHapi.token.generate(
+        {user : user._id},
+        {
+            key : ""+process.env.TOKEN,
+            algorithm: 'HS256'
+        });
+}
+
+export const decodeHapiToken = (encryptedToken) => {
+    return JwtHapi.token.decode(encryptedToken);
+}

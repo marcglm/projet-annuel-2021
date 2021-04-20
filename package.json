@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@hapi/hapi": "^20.1.2",
+    "@hapi/jwt": "^2.0.1",
     "bson": "^4.3.0",
     "dotenv": "^8.2.0",
     "hapi-auth-bearer-token": "^8.0.0",
