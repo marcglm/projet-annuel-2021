@@ -4,7 +4,7 @@
   "description": "projet pour progresser sur le framework hapi",
   "main": "index.ts",
   "scripts": {
-    "start": "node index.ts",
+    "start": "nodemon index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Marc GHALEM",
