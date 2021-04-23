@@ -12,7 +12,9 @@ import CreateUserResponse from "./src/responsemodel/CreateUserResponse";
 import {userToUserResponse} from "./src/responsemodel/UserResponse";
 import ConnectUserResponse from "./src/responsemodel/ConnectUserResponse";
 import {userToUserConnectedResponse} from "./src/responsemodel/UserConnectedResponse";
-const mailchimpTx = require('@mailchimp/mailchimp_transactional')('0zOTl9NoVM74vwzgTUr2vwe');
+import {sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
+const mailchimpTx = require('@mailchimp/mailchimp_transactional')(process.env.API_KEY_MAILCHIMP);
+
 env.config();
 
 const PATH_BASE = ''
@@ -116,21 +118,19 @@ export const init = async function() {
         method: 'POST',
         path: PATH_BASE + '/invite',
         options: {
-            auth: false,
-            /*validate: {
+            auth:false,
+            validate: {
                 payload: Joi.object({
                     email: Joi.string().email().required(),
-
                 }),
                 failAction: (request, h, err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
-            }*/
+            }
         },
         handler: async (request, res) => {
-            const response = await mailchimpTx.users.ping();
-            console.log(response);
-            return 'HELLO WORLD'
+            let promise = sendInvitationLink(request);
+           return promise;
         }
     });
 

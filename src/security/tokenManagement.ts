@@ -15,3 +15,9 @@ export const generateHapiToken = (user: User) =>{
             algorithm: 'HS256'
         });
 }
+
+export const decodeHapiToken = (token: string) =>{
+
+    return JwtHapi.token.decode(token);
+}
+
