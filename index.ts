@@ -6,11 +6,12 @@ import {generateHapiToken} from "./src/security/tokenManagement";
 import {connectUser} from "./src/app/02_LoginAccount";
 import UserRepository from "./src/repository/UserRepository";
 import {convertToObject} from "./src/utils/conversion";
-import {addManager, sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
+import {sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
 import {createUser} from "./src/app/01_createAccount";
 import BaseResponse from "./src/responsemodel/BaseResponse";
 import User from "./src/models/User";
 import {errorPayload} from "./src/utils/api_utils";
+import Joi from "joi";
 
 env.config();
 
@@ -45,28 +46,25 @@ export const init = async function() {
     server.auth.default('restricted');
 
     // Creation d'un nouvel utilisateur
-    /*server.route({
-        method: 'POST',
-        path: PATH_BASE + '/adduser/{role}',
-        options: {
-            auth: false,
-        },
-        handler: async (request, res) => {
-            try {
-                const account = await createUser(request, request.params.role);
-                return res.response({id_token: generateHapiToken(account)}).code(201);
-            } catch (err) {
-                //TO DO : voir comment effectuer le return de maniere propre
-                return Boom.badRequest(err.message)
-            }
-        }
-    });*/
-
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/adduser/{role}',
+        path: PATH_BASE + '/adduser/',
         options: {
             auth: false,
+            validate: {
+                payload: Joi.object({
+                    email: Joi.string().email().required(),
+                    password: Joi.string().min(6).max(200).required(),
+                    repeat_password: Joi.ref('password'),
+                    username:Joi.string().required(),
+                    role: Joi.string().required(),
+                    manager:Joi.string().required().email(),
+                    isActivated: Joi.boolean().required()
+                }),
+                failAction: (request, h, err) => {
+                    return h.response(errorPayload(<Error>err)).takeover().code(400)
+                }
+            }
         },
         handler: async (req, res) : Promise<BaseResponse<User>> => {
             try{
@@ -90,16 +88,24 @@ export const init = async function() {
                 access: {
                     scope: ["employee", "manager"]
                 }
+            },
+            validate: {
+                payload: Joi.object({
+                    email: Joi.string().email().required(),
+                    password: Joi.string().min(6).max(200).required(),
+                }),
+                failAction: (request, h, err) => {
+                    return h.response(err?.message).takeover().code(400)
+                }
             }
         },
         handler: async (req, res) => {
             try {
-                const userConverted = convertToObject(req.payload);
-                let user = await connectUser(userConverted.email, userConverted.password);
+                let user = await connectUser(req);
                 let token = generateHapiToken(user);
                 return { user, token };
             } catch (err) {
-                return Boom.badRequest(err.message)
+                return errorPayload<User>(err);
             }
         }
     });
@@ -108,15 +114,25 @@ export const init = async function() {
         method: 'POST',
         path: PATH_BASE + '/sendmail',
         options: {
-            auth: {
-                access: {
-                    scope: "manager"
+            auth: false,
+            validate: {
+                payload: Joi.object({
+                    email: Joi.string().email().required(),
+                    password: Joi.string().min(6).max(200).required(),
+                    repeat_password: Joi.ref('password'),
+
+                }),
+                failAction: (request, h, err) => {
+                    return h.response(
+                        errorPayload(<Error>err)
+                    ).takeover().code(400)
                 }
             }
         },
         handler: async (request, res) => {
-            let promise = await sendInvitationLink(request);
-            return res.response(promise)
+            let convertToObject1 = convertToObject(request.payload);
+            console.log(convertToObject1)
+            return ' HELLO WORLD'
         }
     });
 

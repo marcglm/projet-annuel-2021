@@ -1,26 +1,21 @@
 import {encodedPassword} from "../../security/passwordManagement";
-import {registerValidation} from "../../utils/validation";
-import NewUserRepository from "../../repository/NewUserRepository";
-import NewUser from "../../models/NewUser";
+import User from "../../models/User";
+import UserRepository from "../../repository/UserRepository";
 
-export const createUser = async (req: any) : Promise<NewUser> => {
+export const createUser = async (req: any) : Promise<User> => {
 
-    const {error} = registerValidation(req.payload);
-
-    if (error) throw new Error(error);
-
-    const isEmailExist = await NewUserRepository.findByEmail(req.payload.email);
+    const isEmailExist = await UserRepository.findByEmail(req.payload.email);
     if (isEmailExist) throw new Error("Email already exist");
 
     const hashPassword = await encodedPassword(req.payload.password)
 
-    let user: NewUser = {
+    let user: User = {
         username : req.payload.username,
         email:req.payload.email,
         password: hashPassword,
         role : req.payload.role,
         manager : req.payload.manager,
-        isValid : req.payload.isValid,
+        isActive : req.payload.isActivated,
     }
-    return await NewUserRepository.insert(user);
+    return await UserRepository.insert(user);
 }

@@ -5,11 +5,3 @@ export const convertToObject = (request: string | object | stream.Readable | Buf
     let object = JSON.stringify(request);
     return JSON.parse(object);
 };
-
-
-export const initTeamObject = (request: string | object | stream.Readable | Buffer) => {
-    let object = JSON.stringify(request);
-    let jsonParse = JSON.parse(object);
-    jsonParse['listEmployee'] = []
-    return jsonParse
-}

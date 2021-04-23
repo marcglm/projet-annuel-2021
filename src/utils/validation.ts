@@ -8,7 +8,7 @@ export const registerValidation = (payload: string | object) => {
         username:Joi.string().required(),
         role: Joi.string().required(),
         manager:Joi.string().required().email(),
-        isValid: Joi.boolean().required()
+        isActivated: Joi.boolean().required()
     });
     return schema.validate(payload);
 };
