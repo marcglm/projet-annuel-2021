@@ -5,9 +5,11 @@ export const registerValidation = (payload: string | object) => {
         email: Joi.string().min(6).max(255).required().email(),
         password: Joi.string().min(6).max(1024).required(),
         repeat_password: Joi.ref('password').required(),
-
+        username:Joi.string().required(),
+        role: Joi.string().required(),
+        manager:Joi.string().required().email(),
+        isValid: Joi.boolean().required()
     });
-
     return schema.validate(payload);
 };
 

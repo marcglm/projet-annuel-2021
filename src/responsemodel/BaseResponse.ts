@@ -4,6 +4,6 @@
  */
 export default interface BaseResponse<T> {
     code: number
-    msg: string
-    payload: T
+    msg?: string
+    payload?: T
 }

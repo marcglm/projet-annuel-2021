@@ -1,23 +1,25 @@
 import Hapi = require('@hapi/hapi');
-import env = require('dotenv');
 import HapiJwt = require('@hapi/jwt');
+import env = require('dotenv');
 import Boom = require("@hapi/boom");
 import {generateHapiToken} from "./src/security/tokenManagement";
 import {connectUser} from "./src/app/02_LoginAccount";
 import UserRepository from "./src/repository/UserRepository";
-import {createUserTest} from "./src/app/01_createAccount";
 import {convertToObject} from "./src/utils/conversion";
 import {addManager, sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
+import {createUser} from "./src/app/01_createAccount";
+import BaseResponse from "./src/responsemodel/BaseResponse";
+import User from "./src/models/User";
+import {errorPayload} from "./src/utils/api_utils";
 
 env.config();
 
-const PORT = process.env.PORT || '3000';
-const PATH_BASE = '/serveur/PA2021';
+const PATH_BASE = ''
 
 export const init = async function() {
 
     const server = Hapi.server({
-        port: PORT,
+        port: process.env.PORT || '8080',
         host: '0.0.0.0'
     });
 
@@ -66,14 +68,15 @@ export const init = async function() {
         options: {
             auth: false,
         },
-        handler: async (request, res) => {
-            try {
-                const account = await createUserTest(request, request.params.role);
-
-                return res.response({id_token: generateHapiToken(account)}).code(201);
-            } catch (err) {
-                //TO DO : voir comment effectuer le return de maniere propre
-                return Boom.badRequest(err.message)
+        handler: async (req, res) : Promise<BaseResponse<User>> => {
+            try{
+                const account = await createUser(req);
+                return {
+                    code: 0,
+                    payload: account
+                }
+            } catch(err) {
+                return errorPayload<User>(err);
             }
         }
     });
@@ -94,24 +97,10 @@ export const init = async function() {
                 const userConverted = convertToObject(req.payload);
                 let user = await connectUser(userConverted.email, userConverted.password);
                 let token = generateHapiToken(user);
-                return {token: token};
+                return { user, token };
             } catch (err) {
                 return Boom.badRequest(err.message)
             }
-        }
-    });
-
-    // route de test
-    server.route({
-        method: 'POST',
-        path: PATH_BASE + '/restricted',
-        options: {
-            auth: false
-        },
-        handler: async (req, res) => {
-            let convertToTeamObject1 = await addManager(req);
-            console.log(convertToTeamObject1)
-            return res.response("HELLO WORLD")
         }
     });
 
