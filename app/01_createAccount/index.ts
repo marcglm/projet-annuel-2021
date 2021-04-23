@@ -1,25 +1,46 @@
-import {badRequest, Boom} from "@hapi/boom";
 import {encodedPassword} from "../../security/passwordManagement";
 import {registerValidation} from "../../utils/Validation";
 import UserRepository from "../../repository/UserRepository";
 import User from "../../models/User";
 import {UserAlreadyExistedError, UserRequiredCredentialsError} from "../../Errors/UserError";
+import { Request } from "@hapi/hapi";
+import {convertToObject} from "../../utils/Convertion";
+//import {convertToObject} from "../../utils/Convertion";
 
-export const createUser = async (req):Promise<any> => {
-    //console.log("-----UUTILISATEUR CREE------", req.payload)
+export const createUser = async (request: Request, role: string):Promise<any> => {
 
-    const {error} = registerValidation(req.payload);
-
+    const {error} = registerValidation(request.payload);
     if (error) throw new UserRequiredCredentialsError(error);
 
-    const isEmailExist = await UserRepository.findByEmail(req.payload.email);
+    let userObject = await convertToObject(request.payload);
+
+    const isEmailExist = await UserRepository.findByEmail(userObject.email);
     if (isEmailExist) throw new UserAlreadyExistedError("Email already exist");
 
-    const hashPassword = await encodedPassword(req.payload.password)
+    const hashPassword = await encodedPassword(userObject.password)
+
     let user:User = {
-       email:req.payload.email,
-        password: hashPassword
+       email:userObject.email,
+        password: hashPassword,
+        role:role
     }
-    //console.log("message" , user)
     return await UserRepository.insert(user);
+}
+
+export const createUserTest = async (request:Request, role:string):Promise<any> => {
+    const {error} = registerValidation(request.payload);
+    if (error) throw new UserRequiredCredentialsError(error);
+
+    let userObject = await convertToObject(request.payload);
+
+    const hashPassword = await encodedPassword(userObject.password)
+
+    let user:User = {
+        email:userObject.email,
+        password: hashPassword,
+        role:role
+    }
+
+    return user;
+
 }

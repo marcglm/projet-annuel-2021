@@ -3,7 +3,7 @@ import {comparePassword} from "../../security/passwordManagement";
 import {UserNotFoundError, UserPasswordWrongError} from "../../Errors/UserError";
 import User from "../../models/User";
 
-export const connectUser = async (email, password):Promise<User> => {
+export const connectUser = async (email: string, password: string):Promise<User> => {
     if(!email) throw new Error("Email missing !");
     if(!password) throw new Error("Password missing !");
     const user = await UserRepository.findByEmail(email);

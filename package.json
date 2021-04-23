@@ -4,29 +4,34 @@
   "description": "projet pour progresser sur le framework hapi",
   "main": "index.ts",
   "scripts": {
+    "build": "rimraf dist && tsc",
     "start": "nodemon index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -r ts-node/register tests/**/*.test.ts"
   },
   "author": "Marc GHALEM",
   "license": "ISC",
   "dependencies": {
     "@hapi/hapi": "^20.1.2",
     "@hapi/jwt": "^2.0.1",
+    "@types/hapi__hapi": "^20.0.7",
     "bson": "^4.3.0",
     "dotenv": "^8.2.0",
-    "hapi-auth-bearer-token": "^8.0.0",
-    "hapi-auth-cookie": "^10.0.0",
-    "hapi-mongodb": "^9.0.2",
-    "mongoose": "^5.12.4",
-    "monk": "^7.3.4"
+    "monk": "^7.3.4",
+    "rimraf": "^3.0.2"
   },
   "devDependencies": {
     "@hapi/boom": "^9.1.2",
     "@hapi/joi": "^17.1.1",
+    "@types/bcrypt": "^3.0.1",
+    "@types/chai": "^4.2.16",
+    "@types/hapi__jwt": "^2.0.0",
+    "@types/mocha": "^8.2.2",
     "@types/node": "^14.14.41",
     "bcrypt": "^5.0.1",
-    "hapi-auth-jwt2": "^10.2.0",
+    "chai": "^4.3.4",
+    "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
+    "mocha": "^8.3.2",
     "nodemon": "^2.0.7",
     "ts-node": "^9.1.1",
     "typescript": "^4.2.4"

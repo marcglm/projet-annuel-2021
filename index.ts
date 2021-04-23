@@ -2,95 +2,80 @@
 import Hapi = require('@hapi/hapi');
 import env = require('dotenv');
 env.config();
-import AuthBearer = require('hapi-auth-bearer-token');
 import HapiJwt = require('@hapi/jwt');
-import mongoose = require("mongoose");
 import Boom = require("@hapi/boom");
 import {generateHapiToken} from "./security/tokenManagement";
 import {connectUser} from "./app/02_LoginAccount";
 import UserRepository from "./repository/UserRepository";
-import {createUser} from "./app/01_createAccount";
+import {createUser, createUserTest} from "./app/01_createAccount";
+import {convertToObject} from "./utils/Convertion";
+import {addManager, sendInvitationLink} from "./app/03_sendLinkForInvitation";
+import {Server} from "@hapi/hapi";
+import User from "./models/User";
 
 //Constantes
-const PORT = process.env.PORT || '8080'
-const server = Hapi.server({
-    port: '3000',
-    host: 'localhost'
-});
-
-mongoose.connect(
-    ''+process.env.MONGO_URL,
-    {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    },
-    () => console.log("connected to db")
-);
-
+const PORT = process.env.PORT || '3000';
 const PATH_BASE = '/serveur/PA2021';
 
-const validate =  async function (artifacts, request, h) {
-    const user = await UserRepository.findById(artifacts.decoded.payload.user)
-    if (!user) return { isValid: false };
-    else return { isValid : true };
-};
+export let server: Server;
 
-const start = async () => {
 
-    await server.register([
-        {
-            plugin :AuthBearer
-        },
-        {
-            plugin:HapiJwt
-        }
-    ]);
+export const init = async function(): Promise<Server> {
+    let server = Hapi.server({
+        port: PORT,
+        host: '0.0.0.0'
+    });
 
+    const validate = async function (
+        artifacts: { decoded: { payload: { user: string; }; }; },
+        request: any,
+        h: any) {
+        const user = await UserRepository.findById(artifacts.decoded.payload.user)
+        if (!user || !user.role) return {isValid: false};
+        else return {isValid: true};
+    };
+
+    await server.register(HapiJwt);
 
     server.auth.strategy('restricted', 'jwt',
         {
-            keys: ""+process.env.TOKEN,
+            keys: "" + process.env.TOKEN,
             validate,
-            verify:false
-        }
-    );
+            verify: false
+        });
 
-    //Rend toutes les routes sécurisées par défaut
+//Rend toutes les routes sécurisées par défaut
     server.auth.default('restricted');
 
-    // Creation d'un nouvel utilisateur
-    server.route({
+// Creation d'un nouvel utilisateur
+    /*server.route({
         method: 'POST',
-        path: PATH_BASE + '/adduser',
-        config: {
-            auth: false
+        path: PATH_BASE + '/adduser/{role}',
+        options: {
+            auth: false,
         },
-        handler: async (req, res) => {
-            try{
-                const account = await createUser(req);
+        handler: async (request, res) => {
+            try {
+                const account = await createUser(request, request.params.role);
                 return res.response({id_token: generateHapiToken(account)}).code(201);
-            } catch(err) {
+            } catch (err) {
                 //TO DO : voir comment effectuer le return de maniere propre
                 return Boom.badRequest(err.message)
             }
         }
-    });
+    });*/
 
-    //Connexion à l'aide d'identifiants
     server.route({
         method: 'POST',
-        path: PATH_BASE+'/login',
-        config : {
-            auth : {
-                mode:'try'
-            }
+        path: PATH_BASE + '/adduser/{role}',
+        options: {
+            auth: false,
         },
-        handler: async (req, res) => {
+        handler: async (request, res) => {
             try {
-                const userBody = req.payload;
-                let user = await connectUser(userBody.email, userBody.password);
-                let token = generateHapiToken(user);
-                return { token : token };
+                const account = await createUserTest(request, request.params.role);
+
+                return res.response({id_token: generateHapiToken(account)}).code(201);
             } catch (err) {
                 //TO DO : voir comment effectuer le return de maniere propre
                 return Boom.badRequest(err.message)
@@ -98,26 +83,76 @@ const start = async () => {
         }
     });
 
+//Connexion à l'aide d'identifiants
     server.route({
-        method: 'GET',
-        path: PATH_BASE + '/restricted',
+        method: 'POST',
+        path: PATH_BASE + '/login',
+        options: {
+            auth: {
+                access: {
+                    scope: ["employee", "manager"]
+                }
+            }
+        },
         handler: async (req, res) => {
-            return res.response('HELLO WORLD')
+            try {
+                const userConverted = convertToObject(req.payload);
+                let user = await connectUser(userConverted.email, userConverted.password);
+                let token = generateHapiToken(user);
+                return {token: token};
+            } catch (err) {
+                return Boom.badRequest(err.message)
+            }
         }
     });
 
-    await server.start();
+//route de test
+    server.route({
+        method: 'POST',
+        path: PATH_BASE + '/restricted',
+        options: {
+            auth: false
+        },
+        handler: async (req, res) => {
+            let convertToTeamObject1 = await addManager(req);
+            console.log(convertToTeamObject1)
+            return res.response("HELLO WORLD")
+        }
+    });
+
+    server.route({
+        method: 'POST',
+        path: PATH_BASE + '/sendmail',
+        options: {
+            auth: {
+                access: {
+                    scope: "manager"
+                }
+            }
+        },
+        handler: async (request, res) => {
+            let promise = await sendInvitationLink(request);
+            return res.response(promise)
+        }
+    });
+
+
     return server;
-}
 
-start()
-    .then((server) => console.log('Server started : %s', server.info.uri) )
-    .catch(err =>
-    {
-        console.error(err);
-        process.exit(1)
-    })
+};
 
+
+export const start = async function (): Promise<void> {
+    console.log(`Starting server, listening on ${server.settings.host}:${server.settings.port}`);
+    return server.start();
+};
+
+
+process.on('unhandledRejection', (err) => {
+    console.error("unhandledRejection");
+    console.error(err);
+    process.exit(1);
+});
 
 
 
