@@ -6,10 +6,10 @@ import AuthBearer = require('hapi-auth-bearer-token');
 import HapiJwt = require('@hapi/jwt');
 import mongoose = require("mongoose");
 import Boom = require("@hapi/boom");
-import {generateHapiToken} from "./security/tokenManagement";
-import {connectUser} from "./app/02_LoginAccount";
-import UserRepository from "./repository/UserRepository";
-import {createUser} from "./app/01_createAccount";
+import {generateHapiToken} from "./src/security/tokenManagement";
+import {connectUser} from "./src/app/02_LoginAccount";
+import UserRepository from "./src/repository/UserRepository";
+import {createUser} from "./src/app/01_createAccount";
 
 //Constantes
 const PORT = process.env.PORT || '8080'

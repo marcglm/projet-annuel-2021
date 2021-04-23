@@ -1,6 +1,5 @@
-import UserRepository from "../../repository/UserRepository";
 import {comparePassword} from "../../security/passwordManagement";
-import {UserNotFoundError, UserPasswordWrongError} from "../../Errors/UserError";
+import {UserNotFoundError, UserPasswordWrongError} from "../../errors/UserError";
 import User from "../../models/User";
 import NewUserRepository from "../../repository/NewUserRepository";
 

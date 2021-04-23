@@ -4,7 +4,7 @@ import {registerValidation} from "../../utils/Validation";
 //import UserRepository from "../../repository/UserRepository";
 import NewUserRepository from "../../repository/NewUserRepository";
 import User from "../../models/User";
-import {UserAlreadyExistedError, UserRequiredCredentialsError} from "../../Errors/UserError";
+import {UserAlreadyExistedError, UserRequiredCredentialsError} from "../../errors/UserError";
 import NewUser from "../../models/NewUser";
 
 export const createUser = async (req):Promise<any> => {
