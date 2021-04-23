@@ -10,12 +10,11 @@ export const createUser = async (req: any) : Promise<User> => {
     const hashPassword = await encodedPassword(req.payload.password)
 
     let user: User = {
-        username : req.payload.username,
-        email:req.payload.email,
+        firstName : req.payload.firstName,
+        lastName : req.payload.lastName,
+        email: req.payload.email,
         password: hashPassword,
-        role : req.payload.role,
-        manager : req.payload.manager,
-        isActive : req.payload.isActivated,
+        isActive: true
     }
     return await UserRepository.insert(user);
 }

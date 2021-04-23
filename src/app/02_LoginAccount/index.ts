@@ -8,7 +8,7 @@ export const connectUser = async (request:any):Promise<User> => {
     let userRequest = convertToObject(request.payload);
 
     const userFounded = await UserRepository.findByEmail(request.payload.email);
-    if (!userFounded) throw new Error("User don't exist");
+    if (!userFounded) throw new Error("No such user");
 
     if(!await comparePassword(userFounded.password, userRequest.password)) throw new Error("Wrong password");
 

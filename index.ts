@@ -1,17 +1,17 @@
 import Hapi = require('@hapi/hapi');
 import HapiJwt = require('@hapi/jwt');
 import env = require('dotenv');
-import Boom = require("@hapi/boom");
 import {generateHapiToken} from "./src/security/tokenManagement";
 import {connectUser} from "./src/app/02_LoginAccount";
 import UserRepository from "./src/repository/UserRepository";
 import {convertToObject} from "./src/utils/conversion";
-import {sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
 import {createUser} from "./src/app/01_createAccount";
 import BaseResponse from "./src/responsemodel/BaseResponse";
 import User from "./src/models/User";
 import {errorPayload} from "./src/utils/api_utils";
 import Joi from "joi";
+import CreateUserResponse from "./src/responsemodel/CreateUserResponse";
+import {userToUserResponse} from "./src/responsemodel/UserResponse";
 
 env.config();
 
@@ -48,33 +48,34 @@ export const init = async function() {
     // Creation d'un nouvel utilisateur
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/adduser/',
+        path: PATH_BASE + '/signup',
         options: {
             auth: false,
             validate: {
                 payload: Joi.object({
                     email: Joi.string().email().required(),
-                    password: Joi.string().min(6).max(200).required(),
-                    repeat_password: Joi.ref('password'),
-                    username:Joi.string().required(),
-                    role: Joi.string().required(),
-                    manager:Joi.string().required().email(),
-                    isActivated: Joi.boolean().required()
+                    password: Joi.string().min(6).max(20).required(),
+                    password2: Joi.string().min(6).max(20).required().valid(Joi.ref('password')),
+                    firstName:Joi.string().required(),
+                    lastName:Joi.string().required()
                 }),
                 failAction: (request, h, err) => {
-                    return h.response(errorPayload(<Error>err)).takeover().code(400)
+                    return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (req, res) : Promise<BaseResponse<User>> => {
+        handler: async (req, res) : Promise<BaseResponse<CreateUserResponse>> => {
             try{
-                const account = await createUser(req);
+                const user = await createUser(req);
                 return {
                     code: 0,
-                    payload: account
+                    payload: {
+                        user: userToUserResponse(user),
+                        token: generateHapiToken(user)
+                    }
                 }
             } catch(err) {
-                return errorPayload<User>(err);
+                return errorPayload<CreateUserResponse>(err);
             }
         }
     });
@@ -82,20 +83,16 @@ export const init = async function() {
     // Connexion à l'aide d'identifiants
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/login',
+        path: PATH_BASE + '/signin',
         options: {
-            auth: {
-                access: {
-                    scope: ["employee", "manager"]
-                }
-            },
+            auth: false,
             validate: {
                 payload: Joi.object({
                     email: Joi.string().email().required(),
-                    password: Joi.string().min(6).max(200).required(),
+                    password: Joi.string().min(6).max(20).required(),
                 }),
                 failAction: (request, h, err) => {
-                    return h.response(err?.message).takeover().code(400)
+                    return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
@@ -123,9 +120,7 @@ export const init = async function() {
 
                 }),
                 failAction: (request, h, err) => {
-                    return h.response(
-                        errorPayload(<Error>err)
-                    ).takeover().code(400)
+                    return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
