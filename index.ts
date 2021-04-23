@@ -68,7 +68,8 @@ const start = async () => {
         handler: async (req, res) => {
             try{
                 const account = await createUser(req);
-                return res.response({id_token: generateHapiToken(account)}).code(201);
+                return account;
+                //return res.response({id_token: generateHapiToken(account)}).code(201);
             } catch(err) {
                 //TO DO : voir comment effectuer le return de maniere propre
                 return Boom.badRequest(err.message)
@@ -90,13 +91,16 @@ const start = async () => {
                 const userBody = req.payload;
                 let user = await connectUser(userBody.email, userBody.password);
                 let token = generateHapiToken(user);
-                return { token : token };
+                return { user : user, token : token };
             } catch (err) {
                 //TO DO : voir comment effectuer le return de maniere propre
                 return Boom.badRequest(err.message)
             }
         }
     }); 
+
+    
+
 
     server.route({
         method: 'GET',
