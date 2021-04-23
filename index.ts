@@ -4,15 +4,15 @@ import env = require('dotenv');
 import {generateHapiToken} from "./src/security/tokenManagement";
 import {connectUser} from "./src/app/02_LoginAccount";
 import UserRepository from "./src/repository/UserRepository";
-import {convertToObject} from "./src/utils/conversion";
 import {createUser} from "./src/app/01_createAccount";
 import BaseResponse from "./src/responsemodel/BaseResponse";
-import User from "./src/models/User";
 import {errorPayload} from "./src/utils/api_utils";
 import Joi from "joi";
 import CreateUserResponse from "./src/responsemodel/CreateUserResponse";
 import {userToUserResponse} from "./src/responsemodel/UserResponse";
-
+import ConnectUserResponse from "./src/responsemodel/ConnectUserResponse";
+import {userToUserConnectedResponse} from "./src/responsemodel/UserConnectedResponse";
+const mailchimpTx = require('@mailchimp/mailchimp_transactional')('0zOTl9NoVM74vwzgTUr2vwe');
 env.config();
 
 const PATH_BASE = ''
@@ -96,38 +96,41 @@ export const init = async function() {
                 }
             }
         },
-        handler: async (req, res) => {
+        handler: async (req, res):Promise<BaseResponse<ConnectUserResponse>> => {
             try {
                 let user = await connectUser(req);
-                let token = generateHapiToken(user);
-                return { user, token };
+                return {
+                    code:0,
+                    payload:{
+                        user : userToUserConnectedResponse(user),
+                        token :generateHapiToken(user)
+                    }
+                };
             } catch (err) {
-                return errorPayload<User>(err);
+                return errorPayload<ConnectUserResponse>(err);
             }
         }
     });
 
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/sendmail',
+        path: PATH_BASE + '/invite',
         options: {
             auth: false,
-            validate: {
+            /*validate: {
                 payload: Joi.object({
                     email: Joi.string().email().required(),
-                    password: Joi.string().min(6).max(200).required(),
-                    repeat_password: Joi.ref('password'),
 
                 }),
                 failAction: (request, h, err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
-            }
+            }*/
         },
         handler: async (request, res) => {
-            let convertToObject1 = convertToObject(request.payload);
-            console.log(convertToObject1)
-            return ' HELLO WORLD'
+            const response = await mailchimpTx.users.ping();
+            console.log(response);
+            return 'HELLO WORLD'
         }
     });
 
