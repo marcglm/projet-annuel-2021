@@ -96,7 +96,7 @@ const start = async () => {
                 return Boom.badRequest(err.message)
             }
         }
-    });
+    }); 
 
     server.route({
         method: 'GET',
