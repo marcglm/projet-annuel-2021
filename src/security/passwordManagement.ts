@@ -1,4 +1,3 @@
-const jwt = require("jsonwebtoken");
 import bcrypt = require("bcrypt");
 
 export const encodedPassword = async (password: any):Promise<string> => {

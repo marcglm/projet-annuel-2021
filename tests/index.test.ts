@@ -1,9 +1,9 @@
 import Hapi = require('@hapi/hapi');
 import { describe, it, beforeEach, afterEach } from "mocha";
 import { expect } from "chai";
-import {generateHapiToken} from "../security/tokenManagement";
-import {createUser} from "../app/01_createAccount";
-import User from "../models/User";
+import {generateHapiToken} from "../src/security/tokenManagement";
+import {createUser} from "../src/app/01_createAccount";
+import User from "../src/models/User";
 import {Server} from "@hapi/hapi";
 import {init} from "../index";
 

@@ -1,35 +1,31 @@
-// Modules
 import Hapi = require('@hapi/hapi');
 import env = require('dotenv');
-env.config();
 import HapiJwt = require('@hapi/jwt');
 import Boom = require("@hapi/boom");
-import {generateHapiToken} from "./security/tokenManagement";
-import {connectUser} from "./app/02_LoginAccount";
-import UserRepository from "./repository/UserRepository";
-import {createUser, createUserTest} from "./app/01_createAccount";
-import {convertToObject} from "./utils/Convertion";
-import {addManager, sendInvitationLink} from "./app/03_sendLinkForInvitation";
-import {Server} from "@hapi/hapi";
-import User from "./models/User";
+import {generateHapiToken} from "./src/security/tokenManagement";
+import {connectUser} from "./src/app/02_LoginAccount";
+import UserRepository from "./src/repository/UserRepository";
+import {createUserTest} from "./src/app/01_createAccount";
+import {convertToObject} from "./src/utils/conversion";
+import {addManager, sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
 
-//Constantes
+env.config();
+
 const PORT = process.env.PORT || '3000';
 const PATH_BASE = '/serveur/PA2021';
 
-export let server: Server;
+export const init = async function() {
 
-
-export const init = async function(): Promise<Server> {
-    let server = Hapi.server({
+    const server = Hapi.server({
         port: PORT,
         host: '0.0.0.0'
     });
 
     const validate = async function (
-        artifacts: { decoded: { payload: { user: string; }; }; },
+        artifacts: { decoded: { payload: { user: string } } },
         request: any,
-        h: any) {
+        h: any
+    ) {
         const user = await UserRepository.findById(artifacts.decoded.payload.user)
         if (!user || !user.role) return {isValid: false};
         else return {isValid: true};
@@ -44,10 +40,9 @@ export const init = async function(): Promise<Server> {
             verify: false
         });
 
-//Rend toutes les routes sécurisées par défaut
     server.auth.default('restricted');
 
-// Creation d'un nouvel utilisateur
+    // Creation d'un nouvel utilisateur
     /*server.route({
         method: 'POST',
         path: PATH_BASE + '/adduser/{role}',
@@ -83,7 +78,7 @@ export const init = async function(): Promise<Server> {
         }
     });
 
-//Connexion à l'aide d'identifiants
+    // Connexion à l'aide d'identifiants
     server.route({
         method: 'POST',
         path: PATH_BASE + '/login',
@@ -106,7 +101,7 @@ export const init = async function(): Promise<Server> {
         }
     });
 
-//route de test
+    // route de test
     server.route({
         method: 'POST',
         path: PATH_BASE + '/restricted',
@@ -136,17 +131,9 @@ export const init = async function(): Promise<Server> {
         }
     });
 
-
-    return server;
-
-};
-
-
-export const start = async function (): Promise<void> {
     console.log(`Starting server, listening on ${server.settings.host}:${server.settings.port}`);
-    return server.start();
+    await server.start();
 };
-
 
 process.on('unhandledRejection', (err) => {
     console.error("unhandledRejection");
@@ -154,6 +141,4 @@ process.on('unhandledRejection', (err) => {
     process.exit(1);
 });
 
-
-
-
+init()
