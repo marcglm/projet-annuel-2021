@@ -23,4 +23,10 @@ export default class UserRepository{
         let call = db.get('users');
         return await call.insert(user);
     }
+
+    static async delete(user: User): Promise<User> {
+        let call = db.get('users');
+        return await call.findOneAndDelete(user)
+    }
+
 }

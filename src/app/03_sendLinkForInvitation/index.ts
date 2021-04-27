@@ -1,13 +1,16 @@
 import UserRepository from "../../repository/UserRepository";
 import {decodeHapiToken} from "../../security/tokenManagement";
 import User from "../../models/User";
+import Invitation from "../../models/Invitation";
 const mailchimpTx = require('@mailchimp/mailchimp_transactional')("0zOTl9NoVM74vwzgTUr2vw");
 
-export const sendInvitationLink = async (request:any) => {
+export const sendInvitationLink = async (request:any):Promise<Invitation> => {
 
+    //Get the decoded token
     let authorizationHeader = request.headers.authorization;
     let decodedToken = decodeHapiToken(authorizationHeader);
 
+    //get a manager with Id
     let managerId = decodedToken.decoded.payload.user;
     let managerObject = await UserRepository.findById(managerId);
 
@@ -40,5 +43,10 @@ export const sendInvitationLink = async (request:any) => {
             }
         ]
     };
-    return await mailchimpTx.messages.send({message});
+    let responseMailChimp = await mailchimpTx.messages.send({message});
+    return {
+        responseMailChimp,
+        emailManager
+    }
+
 }

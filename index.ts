@@ -1,23 +1,22 @@
 import Hapi = require('@hapi/hapi');
-import HapiJwt = require('@hapi/jwt');
 import env = require('dotenv');
-import {generateHapiToken} from "./src/security/tokenManagement";
+import {generateHapiToken, HapiJwt, validate} from "./src/security/tokenManagement";
 import {connectUser} from "./src/app/02_LoginAccount";
-import UserRepository from "./src/repository/UserRepository";
 import {createUser} from "./src/app/01_createAccount";
 import BaseResponse from "./src/responsemodel/BaseResponse";
 import {errorPayload} from "./src/utils/api_utils";
-import Joi from "joi";
 import CreateUserResponse from "./src/responsemodel/CreateUserResponse";
 import {userToUserResponse} from "./src/responsemodel/UserResponse";
 import ConnectUserResponse from "./src/responsemodel/ConnectUserResponse";
 import {userToUserConnectedResponse} from "./src/responsemodel/UserConnectedResponse";
 import {sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
-const mailchimpTx = require('@mailchimp/mailchimp_transactional')(process.env.API_KEY_MAILCHIMP);
+import InviteUserResponse from "./src/responsemodel/InviteUserResponse";
+import {responseToInviteResponse} from "./src/responsemodel/InviteResponse";
+import {inviteHTTPStatus, signinHTTPStatus, signupHTTPStatus} from "./src/swagger/httpStatus";
+import {inviteValidation, signinValidation, signupValidation} from "./src/swagger/validatePayload";
+import {pluginsSwagger} from "./src/swagger/swaggerInit";
 
 env.config();
-
-const PATH_BASE = ''
 
 export const init = async function() {
 
@@ -26,17 +25,8 @@ export const init = async function() {
         host: '0.0.0.0'
     });
 
-    const validate = async function (
-        artifacts: { decoded: { payload: { user: string } } },
-        request: any,
-        h: any
-    ) {
-        const user = await UserRepository.findById(artifacts.decoded.payload.user)
-        if (!user || !user.role) return {isValid: false};
-        else return {isValid: true};
-    };
-
     await server.register(HapiJwt);
+    await server.register(pluginsSwagger);
 
     server.auth.strategy('restricted', 'jwt',
         {
@@ -45,26 +35,24 @@ export const init = async function() {
             verify: false
         });
 
+
     server.auth.default('restricted');
 
-    // Creation d'un nouvel utilisateur
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/signup',
+        path: '/signup',
         options: {
+            description:'Add a new employee',
+            notes:['Create a new employee with an email, a password, a confirmation password, a firstname and a lastname'],
+            tags:['api'],
             auth: false,
+            plugins:{ 'hapi-swagger' : { responses : signupHTTPStatus } },
             validate: {
-                payload: Joi.object({
-                    email: Joi.string().email().required(),
-                    password: Joi.string().min(6).max(20).required(),
-                    password2: Joi.string().min(6).max(20).required().valid(Joi.ref('password')),
-                    firstName:Joi.string().required(),
-                    lastName:Joi.string().required()
-                }),
+                payload: signupValidation,
                 failAction: (request, h, err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
-            }
+            },
         },
         handler: async (req, res) : Promise<BaseResponse<CreateUserResponse>> => {
             try{
@@ -82,17 +70,17 @@ export const init = async function() {
         }
     });
 
-    // Connexion à l'aide d'identifiants
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/signin',
+        path: '/signin',
         options: {
+            description:'Connect an employee/manager',
+            notes:['Connect an employee/manager with an email and a password'],
+            tags:['api'],
             auth: false,
+            plugins:{ 'hapi-swagger' : { responses : signinHTTPStatus } },
             validate: {
-                payload: Joi.object({
-                    email: Joi.string().email().required(),
-                    password: Joi.string().min(6).max(20).required(),
-                }),
+                payload: signinValidation,
                 failAction: (request, h, err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
@@ -116,21 +104,33 @@ export const init = async function() {
 
     server.route({
         method: 'POST',
-        path: PATH_BASE + '/invite',
+        path: '/invite',
         options: {
+            description:'Send an invitation link to an employee',
+            notes:['Send a link by email for an employee to create an account'],
+            tags:['api'],
             auth:false,
+            plugins:{ 'hapi-swagger' : { responses : inviteHTTPStatus } },
             validate: {
-                payload: Joi.object({
-                    email: Joi.string().email().required(),
-                }),
+                payload: inviteValidation,
                 failAction: (request, h, err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (request, res) => {
-            let promise = sendInvitationLink(request);
-           return promise;
+        handler: async (request, res):Promise<BaseResponse<InviteUserResponse>> => {
+            try {
+                let response = await sendInvitationLink(request);
+                return {
+                    code:0,
+                    payload:{
+                        invitation: responseToInviteResponse(response)
+                    }
+                };
+            }catch (err){
+                return errorPayload<InviteUserResponse>(err);
+
+            }
         }
     });
 

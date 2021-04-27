@@ -1,11 +1,11 @@
-const jwt = require("jsonwebtoken");
-import JwtHapi = require("@hapi/jwt");
+export import HapiJwt = require("@hapi/jwt");
 import User from "../models/User";
+import UserRepository from "../repository/UserRepository";
 
 
 export const generateHapiToken = (user: User) =>{
 
-    return JwtHapi.token.generate(
+    return HapiJwt.token.generate(
         {
             user : user._id,
             scope:user.role
@@ -18,6 +18,16 @@ export const generateHapiToken = (user: User) =>{
 
 export const decodeHapiToken = (token: string) =>{
 
-    return JwtHapi.token.decode(token);
+    return HapiJwt.token.decode(token);
 }
+
+export const validate = async function (
+    artifacts: { decoded: { payload: { user: string } } },
+    request: any,
+    h: any
+) {
+    const user = await UserRepository.findById(artifacts.decoded.payload.user)
+    if (!user || !user.role) return {isValid: false};
+    else return {isValid: true};
+};
 
