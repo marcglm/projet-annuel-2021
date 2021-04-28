@@ -1,10 +1,11 @@
 import Hapi = require('@hapi/hapi');
 import {init} from "../initServer";
+import UserRepository from "../src/repository/UserRepository";
 
 
 
 describe("Test des routes", async () => {
-    const PORT = process.env.PORT || '3000';
+
     let server: Hapi.Server;
 
     beforeEach(async () => {
@@ -15,12 +16,14 @@ describe("Test des routes", async () => {
     });
 
     it("should add user with success", async () => {
+        const EMAIL_USER = "duponddupondm@hotmail.fr"
+        await UserRepository.delete(EMAIL_USER);
 
         const response = await server.inject({
             method: "POST",
             url: '/signup',
             payload:{
-                email: "duponddupondm@hotmail.fr",
+                email: EMAIL_USER,
                 password: "000000",
                 password2:"000000",
                 firstName:"John",
@@ -30,10 +33,12 @@ describe("Test des routes", async () => {
 
 
         const payload = JSON.parse(response.payload);
+        console.log(response)
         //expect(payload.error).to.equal("Bad Request");
-        expect(payload.statusCode).toEqual(200)
+        expect(response.statusCode).toEqual(200)
 
         //expect(payload.id_token).exist
+        await UserRepository.delete(EMAIL_USER);
 
     });
 

@@ -20,9 +20,8 @@ const server = Hapi.server({
     host: '0.0.0.0'
 });
 
-export const init = async  () => {
-    await server.initialize();
 
+export const init = async  () => {
     await server.register(HapiJwt);
     await server.register(pluginsSwagger);
 
@@ -31,9 +30,8 @@ export const init = async  () => {
             keys: "" + process.env.TOKEN,
             validate,
             verify: false
-        });
-
-
+        }
+    );
     server.auth.default('restricted');
 
     server.route({
@@ -128,5 +126,9 @@ export const init = async  () => {
             }
         }
     });
+
+    await server.initialize();
+
+
     return server;
 };
