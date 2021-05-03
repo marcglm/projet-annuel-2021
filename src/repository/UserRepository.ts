@@ -1,6 +1,6 @@
 import {db} from "./db";
 import User from "../models/User";
-import {InsertResult} from "monk";
+import {InsertResult, UpdateResult} from "monk";
 
 
 export default class UserRepository{
@@ -23,6 +23,22 @@ export default class UserRepository{
         let call = db.get('users');
         return await call.insert(user);
     }
+
+    static async updateNewEmployee(user: User):Promise<UpdateResult> {
+        let call = db.get('users');
+        return await call.update(
+            {email:user.email},
+            { $set: {
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    password: user.password,
+                    isActive: user.isActive
+                }
+            }
+
+        )
+    }
+
 
     static async delete(email: string): Promise<User> {
         let call = db.get('users');

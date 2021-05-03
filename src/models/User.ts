@@ -8,6 +8,7 @@ export default interface User {
     password:string
     role?:string
     manager?: string
+    pinCode?:string
     isActive:boolean
 }
 

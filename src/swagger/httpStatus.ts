@@ -26,6 +26,14 @@ export const inviteHTTPStatus = {
             msg: Joi.string().example('not sent')
         }).label('Bad response result')
 
+    },
+    401: {
+        description: 'Unauthorized',
+        schema: Joi.object({
+            code: Joi.number()
+                .example('1'),
+            msg: Joi.string().example('Invalid token')
+        }).label('Bad response result')
     }
 }
 
@@ -79,6 +87,34 @@ export const signinHTTPStatus = {
             code: Joi.number()
                 .example('1'),
             msg: Joi.string().example('No such user')
+        }).label('Bad response result')
+
+    }
+}
+
+export const signupEmployeeHTTPStatus = {
+    200: {
+        description: 'creation of employee\'s account successful',
+        schema: Joi.object({
+            code: Joi.number()
+                .example('0'),
+            payload: Joi.object({
+                user: Joi.object({
+                    firstName:Joi.string().example('Josh'),
+                    lastName:Joi.string().example('Nobody'),
+                    email:Joi.string().email().example('example@domain.fr'),
+                    isValid:Joi.boolean()
+                })
+            }),
+            token:Joi.string()
+        }).label('Response Result')
+    },
+    400: {
+        description: 'Something wrong happened',
+        schema: Joi.object({
+            code: Joi.number()
+                .example('1'),
+            msg: Joi.string().example('Email already exist')
         }).label('Bad response result')
 
     }

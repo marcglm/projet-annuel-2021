@@ -1,13 +1,16 @@
 import UserRepository from "../../repository/UserRepository";
 import {decodeHapiToken} from "../../security/tokenManagement";
 import User from "../../models/User";
-import Invitation from "../../models/Invitation";
 const mailchimpTx = require('@mailchimp/mailchimp_transactional')("0zOTl9NoVM74vwzgTUr2vw");
+const RANDOMSTRING = require("randomstring");
 
-export const sendInvitationLink = async (request:any):Promise<Invitation> => {
+export const sendInvitationLink = async (request:any) => {
+
+    const EMPLOYEE_ROLE = "EMPLOYEE"
+    const activateCode = RANDOMSTRING.generate({length: 10, charset: 'alphanumeric'});
 
     //Get the decoded token
-    let authorizationHeader = request.headers.authorization;
+    let authorizationHeader = request.headers.authorization.split(" ")[1];
     let decodedToken = decodeHapiToken(authorizationHeader);
 
     //get a manager with Id
@@ -17,25 +20,29 @@ export const sendInvitationLink = async (request:any):Promise<Invitation> => {
     let emailManager = managerObject.email;
     let emailEmployee = request.payload.email;
 
-    let isEmailExisted = await UserRepository.findByEmail(emailEmployee);
-    if (isEmailExisted) throw new Error("Email already exist");
+    let existingUser = await UserRepository.findByEmail(emailEmployee);
+    if (existingUser) throw new Error("Email already exist");
 
-    let user: User = {
+
+    let newEmployee: User = {
         firstName : "",
         lastName : "",
         email: emailEmployee,
         password: "",
-        role:"EMPLOYEE",
+        role:EMPLOYEE_ROLE,
         manager:emailManager,
+        pinCode:activateCode,
         isActive: false
     }
 
-    await UserRepository.insert(user);
+    await UserRepository.insert(newEmployee);
+
 
     const message = {
         from_email: "pros@cadeaudelamaison.com",
         subject: "Hello world",
-        text: "Welcome to Mailchimp Transactional!",
+        text: "Welcome to Mailchimp Transactional!\n" +
+            " Here is your code to activate your account"+activateCode,
         to: [
             {
                 email: emailEmployee,
@@ -43,10 +50,6 @@ export const sendInvitationLink = async (request:any):Promise<Invitation> => {
             }
         ]
     };
-    let responseMailChimp = await mailchimpTx.messages.send({message});
-    return {
-        responseMailChimp,
-        emailManager
-    }
+    await mailchimpTx.messages.send({message});
 
 }

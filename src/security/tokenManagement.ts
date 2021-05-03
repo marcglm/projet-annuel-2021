@@ -12,7 +12,7 @@ export const generateHapiToken = (user: User) =>{
         },
         {
             key : ""+process.env.TOKEN,
-            algorithm: 'HS256'
+            algorithm: "HS256"
         });
 }
 
@@ -21,13 +21,17 @@ export const decodeHapiToken = (token: string) =>{
     return HapiJwt.token.decode(token);
 }
 
+
+
 export const validate = async function (
     artifacts: { decoded: { payload: { user: string } } },
     request: any,
     h: any
 ) {
     const user = await UserRepository.findById(artifacts.decoded.payload.user)
-    if (!user || !user.role) return {isValid: false};
-    else return {isValid: true};
+    if (!user) {
+        return {isValid: false};
+    }
+    return {isValid: true};
 };
 

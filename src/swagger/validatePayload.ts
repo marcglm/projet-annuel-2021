@@ -1,21 +1,31 @@
 import Joi from "joi";
 
+const PATTERN = "";
+
 export const signupValidation = Joi.object({
     email: Joi.string().email().required()
-        .description('A valid Email\'s employee')
+        .description('A valid email')
         .example('example@domain.fr'),
-    password: Joi.string().min(6).max(20).required()
-        .description('A valid password')
+    password: Joi.string().regex(RegExp(PATTERN))
+        .min(6).max(20).required()
+        .description('A valid password : ' +
+            '- Must contain at least one digit [0-9]\n ' +
+            '- Must contain at least one lowercase Latin character [a-z]\n ' +
+            '- Must contain at least one uppercase Latin character [A-Z]\n ' +
+            '- Must contain at least one special character like ! @ # & ( )\n ' +
+            '- Must contain a length of at least 8 characters and a maximum of 20 characters')
         .example('valid_Password'),
     password2: Joi.string().min(6).max(20).required().valid(Joi.ref('password'))
         .description('A valid password identical to the password above')
         .example('valid_Password_confirmed'),
     firstName: Joi.string().required()
-        .description(' Employee\'s firstname')
+        .description('Firstname')
         .example('Josh'),
     lastName: Joi.string().required()
-        .description('Employee\'s lastname')
-        .example('Nobody')
+        .description('Lastname')
+        .example('Nobody'),
+    pinCode: Joi.string().required()
+        .description('An alphanumeric code you received with the invitation link')
 }).label('Employee\'s Information')
 
 export const signinValidation = Joi.object({
