@@ -846,6 +846,7 @@ describe("Route tests ", ()=> {
             });
 
             //THEN
+            console.log(addManagerResponse)
             let responseParsed = convertToObject(addManagerResponse.result);
 
             expect(addManagerResponse.statusCode).toBe(200)

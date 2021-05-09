@@ -20,8 +20,8 @@ export function verificationOfUserExistence(user: User) {
     if (!user) throw new Error("No such User !");
 }
 
-export function verificationOfPinCode(this: any, userPinCOde: string | undefined) {
-    if(this.pinCode != userPinCOde) throw new Error("Pin code invalid !");
+export function verificationOfPinCode(pinCode: string, userPinCOde: string | undefined) {
+    if(pinCode != userPinCOde) throw new Error("Pin code invalid !");
 }
 
 export function verificationOfActivation(user: User) {

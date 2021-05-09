@@ -7,7 +7,7 @@ export const createUser = async (req: any) : Promise<User> => {
     const existingUser = await UserRepository.findByEmail(req.payload.email);
     if (!existingUser) throw new Error("You need to receive an invitation link first !");
     verificationOfActivation(existingUser);
-    verificationOfPinCode(req.payload.pinCode);
+    verificationOfPinCode(req.payload.pinCode,existingUser.pinCode);
 
     const hashPassword = await encodedPassword(req.payload.password)
 
@@ -48,7 +48,7 @@ export const createManager = async (req: any) : Promise<User> => {
     const existedManager = await UserRepository.findByEmail(req.payload.email);
     if (!existedManager) throw new Error("The administrator must send you an invitation link first !");
     verificationOfActivation(existedManager);
-    verificationOfPinCode(req.payload.pinCode,existedManager.pinCode);
+    verificationOfPinCode(req.payload.pinCode, existedManager.pinCode);
 
     const hashPassword = await encodedPassword(req.payload.password)
 

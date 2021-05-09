@@ -67,8 +67,6 @@ export const sendInvitationLink = async (request:any) => {
             let message = newUserAndMessage.message
             await UserRepository.insert(newUserAndMessage.newUser);
             await mailchimpTx.messages.send({message});
-
     }
-
 
 }
