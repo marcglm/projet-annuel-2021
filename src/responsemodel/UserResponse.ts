@@ -14,6 +14,6 @@ export function userToUserResponse(user: User) {
     lastName: user.lastName,
     email: user.email,
     isActive: user.isActive,
-    role: user.role
+    role: user.scope
   };
 }

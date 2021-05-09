@@ -1,55 +1,74 @@
 import UserRepository from "../../repository/UserRepository";
-import {decodeHapiToken} from "../../security/tokenManagement";
-import User from "../../models/User";
-const mailchimpTx = require('@mailchimp/mailchimp_transactional')("0zOTl9NoVM74vwzgTUr2vw");
+import {decodeTokenInHeader} from "../../security/tokenManagement";
+import User, {verificationOfUserEmail, verificationOfUserExistence} from "../../models/User";
+import env from 'dotenv'
+env.config()
+const mailchimpTx = require('@mailchimp/mailchimp_transactional')(process.env.API_KEY_MAILCHIMP);
 const RANDOMSTRING = require("randomstring");
 
-export const sendInvitationLink = async (request:any) => {
 
-    const EMPLOYEE_ROLE = "EMPLOYEE"
+function initUserAndEmailBody(newUserEmail: string, managerEmail:string, role:string ) {
     const activateCode = RANDOMSTRING.generate({length: 10, charset: 'alphanumeric'});
-
-    //Get the decoded token
-    let authorizationHeader = request.headers.authorization.split(" ")[1];
-    let decodedToken = decodeHapiToken(authorizationHeader);
-
-    //get a manager with Id
-    let managerId = decodedToken.decoded.payload.user;
-    let managerObject = await UserRepository.findById(managerId);
-
-    let emailManager = managerObject.email;
-    let emailEmployee = request.payload.email;
-
-    let existingUser = await UserRepository.findByEmail(emailEmployee);
-    if (existingUser) throw new Error("Email already exist");
-
-
-    let newEmployee: User = {
-        firstName : "",
-        lastName : "",
-        email: emailEmployee,
+    let newUser: User = {
+        firstName: "",
+        lastName: "",
+        email: newUserEmail,
         password: "",
-        role:EMPLOYEE_ROLE,
-        manager:emailManager,
-        pinCode:activateCode,
+        scope: [role],
+        manager: managerEmail,
+        pinCode: activateCode,
         isActive: false
     }
 
-    await UserRepository.insert(newEmployee);
-
-
     const message = {
         from_email: "pros@cadeaudelamaison.com",
-        subject: "Hello world",
+        subject: "Welcome Manager",
         text: "Welcome to Mailchimp Transactional!\n" +
-            " Here is your code to activate your account"+activateCode,
+            " Here is your code to activate your account : " + activateCode,
         to: [
             {
-                email: emailEmployee,
+                email: newUserEmail,
                 type: "to"
             }
         ]
     };
-    await mailchimpTx.messages.send({message});
+    return { message , newUser};
+}
+
+export const sendInvitationLink = async (request:any) => {
+
+    let newUserAndMessage;
+    let userId = decodeTokenInHeader(request);
+    let userCaller = await UserRepository.findById(userId);
+    verificationOfUserExistence(userCaller)
+    let scope = userCaller.scope?.pop();
+
+    if( scope === 'MANAGER'){
+        let emailNewEmployee = request.payload.email;
+        let emailManager = userCaller.email;
+        let existingEmployee = await UserRepository.findByEmail(emailNewEmployee);
+        verificationOfUserEmail(existingEmployee);
+
+        newUserAndMessage = initUserAndEmailBody(emailNewEmployee, emailManager,"EMPLOYEE");
+
+        let message = newUserAndMessage.message
+        await UserRepository.insert(newUserAndMessage.newUser);
+        await mailchimpTx.messages.send({message});
+
+    }
+    else if (scope === 'ADMIN' ){
+            let emailNewManager = request.payload.email;
+            let emailAdmin = "";
+            let existingManager = await UserRepository.findByEmail(emailNewManager);
+            verificationOfUserEmail(existingManager);
+
+            newUserAndMessage = initUserAndEmailBody(emailNewManager, emailAdmin,"MANAGER");
+
+            let message = newUserAndMessage.message
+            await UserRepository.insert(newUserAndMessage.newUser);
+            await mailchimpTx.messages.send({message});
+
+    }
+
 
 }

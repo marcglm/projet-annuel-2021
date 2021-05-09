@@ -1,30 +1,30 @@
-let Hapi = require('@hapi/hapi');
-import {generateHapiToken, HapiJwt, validate} from "./src/security/tokenManagement";
+import Hapi from '@hapi/hapi'
+import {generateHapiToken, validate} from "./src/security/tokenManagement";
 import {pluginsSwagger} from "./src/swagger/swaggerInit";
 import {inviteHTTPStatus, signinHTTPStatus, signupEmployeeHTTPStatus, signupHTTPStatus} from "./src/swagger/httpStatus";
 import {inviteValidation, signinValidation, signupValidation} from "./src/swagger/validatePayload";
 import {errorPayload} from "./src/utils/api_utils";
 import CreateUserResponse from "./src/responsemodel/CreateUserResponse";
-import {createEmployee, createUser} from "./src/app/01_createAccount";
+import {createEmployee, createManager} from "./src/app/01_createAccount";
 import {userToUserResponse} from "./src/responsemodel/UserResponse";
 import ConnectUserResponse from "./src/responsemodel/ConnectUserResponse";
 import {connectUser} from "./src/app/02_LoginAccount";
 import {userToUserConnectedResponse} from "./src/responsemodel/UserConnectedResponse";
 import InviteUserResponse from "./src/responsemodel/InviteUserResponse";
 import {sendInvitationLink} from "./src/app/03_sendLinkForInvitation";
-import {ResponseObject, ResponseToolkit} from "@hapi/hapi";
+import {ResponseObject} from "@hapi/hapi";
+import HapiJwt from "@hapi/jwt";
 
-const server = Hapi.server({
+const server:Hapi.Server = Hapi.server({
     port: process.env.PORT || '3000',
-    host: 'localhost'
+    host: process.env.HOST || 'localhost'
 });
-
 
 export const init = async  () => {
 
     await server.register(HapiJwt);
     if (process.env.DEBUG) {
-       await server.register(pluginsSwagger);
+        await server.register(pluginsSwagger);
     }
 
     server.auth.strategy('restricted', 'jwt',
@@ -32,10 +32,8 @@ export const init = async  () => {
             keys: "" + process.env.TOKEN,
             validate,
             verify: false
-        }
-    );
+        });
     server.auth.default('restricted');
-
 
     server.route({
         method: 'POST',
@@ -44,15 +42,16 @@ export const init = async  () => {
             description:'Add a new employee',
             notes:['Create a new employee with an email, a password, a confirmation password, a firstname, a lastname and a pin Code'],
             tags:['api'],
+            auth: false,
             plugins:{ 'hapi-swagger' : { responses : signupEmployeeHTTPStatus } },
             validate: {
                 payload: signupValidation,
-                failAction: (request:Request, h :ResponseToolkit, err:Error|undefined) => {
+                failAction: (request, h , err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (req:Request, res:ResponseToolkit) : Promise<ResponseObject> => {
+        handler: async (req, res) : Promise<ResponseObject> => {
             try{
 
                 const user = await createEmployee(req);
@@ -70,25 +69,27 @@ export const init = async  () => {
         }
     });
 
+
     server.route({
         method: 'POST',
-        path: '/signup',
+        path: '/addmanager',
         options: {
-            description:'Add a new employee',
-            notes:['Create a new employee with an email, a password, a confirmation password, a firstname and a lastname'],
+            description:'Add a new manager',
+            notes:['Create a new manager with an email, a password, a confirmation password, a firstname, a lastname and a pin Code'],
             tags:['api'],
             auth: false,
-            plugins:{ 'hapi-swagger' : { responses : signupHTTPStatus } },
+            plugins:{ 'hapi-swagger' : { responses : signupEmployeeHTTPStatus } },
             validate: {
                 payload: signupValidation,
-                failAction: (request:Request, h :ResponseToolkit, err:Error|undefined) => {
+                failAction: (request, h , err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (req:Request, res:ResponseToolkit) : Promise<ResponseObject> => {
+        handler: async (req, res) : Promise<ResponseObject> => {
             try{
-                const user = await createUser(req);
+
+                const user = await createManager(req);
                 return res.response( {
                     code: 0,
                     payload: {
@@ -103,6 +104,7 @@ export const init = async  () => {
         }
     });
 
+
     server.route({
         method: 'POST',
         path: '/signin',
@@ -114,12 +116,12 @@ export const init = async  () => {
             plugins:{ 'hapi-swagger' : { responses : signinHTTPStatus } },
             validate: {
                 payload: signinValidation,
-                failAction: (request:Request, h :ResponseToolkit, err:Error|undefined) => {
+                failAction: (request, h , err) => {
                     return h.response(errorPayload(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (req:Request, res:ResponseToolkit):Promise<ResponseObject> => {
+        handler: async (req, res):Promise<ResponseObject> => {
             try {
                 let user = await connectUser(req);
                 return res.response({
@@ -142,15 +144,18 @@ export const init = async  () => {
             description:'Send an invitation link to an employee',
             notes:['Send a link by email for an employee to create an account'],
             tags:['api'],
+            auth:{
+                scope: ['ADMIN','MANAGER']
+            },
             plugins:{ 'hapi-swagger' : { responses : inviteHTTPStatus } },
             validate: {
                 payload: inviteValidation,
-                failAction: (request:Request, h :ResponseToolkit, err:Error|undefined):ResponseObject => {
+                failAction: (request, h , err):ResponseObject => {
                     return h.response(errorPayload<InviteUserResponse>(err)).takeover().code(400)
                 }
             }
         },
-        handler: async (request:Request, res:ResponseToolkit):Promise<ResponseObject> => {
+        handler: async (request, res):Promise<ResponseObject> => {
             try {
                 await sendInvitationLink(request);
                 return res.response().code(200);
@@ -163,6 +168,6 @@ export const init = async  () => {
 
     await server.initialize();
 
-
     return server;
 };
+

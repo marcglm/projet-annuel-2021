@@ -8,6 +8,6 @@ export default interface UserConnectedResponse {
 export function userToUserConnectedResponse(user: User) {
     return {
         email: user.email,
-        role: user.role
+        role: user.scope
     };
 }

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rimraf ./dist && tsc",
     "start": "tsc && nodemon index.ts",
-    "test": "jasmine-ts --config=jasmine.json"
+    "test": "jasmine-ts --config=jasmine.json NODE_ENV=\"test\""
   },
   "author": "Marc GHALEM",
   "license": "ISC",
@@ -25,6 +25,7 @@
     "fast-check": "^2.14.0",
     "generate-password": "^1.6.0",
     "joi": "^17.4.0",
+    "joi-password-complexity": "^5.1.0",
     "jsonwebtoken": "^8.5.1",
     "monk": "^7.3.4",
     "randomstring": "^1.1.5",

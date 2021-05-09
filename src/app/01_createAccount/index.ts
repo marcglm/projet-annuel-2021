@@ -1,15 +1,25 @@
 import {encodedPassword} from "../../security/passwordManagement";
-import User from "../../models/User";
+import User, {verificationOfPinCode} from "../../models/User";
 import UserRepository from "../../repository/UserRepository";
 
 export const createUser = async (req: any) : Promise<User> => {
 
     const existingUser = await UserRepository.findByEmail(req.payload.email);
-    if (!existingUser) throw new Error("Your manager need to send you an invitation link first !");
+    if (!existingUser) throw new Error("You need to receive an invitation link first !");
+    if(existingUser.isActive) throw new Error("account already activated !");
+    verificationOfPinCode(req.payload.pinCode,existingUser.pinCode);
 
-    if(!req.payload.isActive) throw new Error("account already created !");
+    let scope = existingUser.scope?.pop();
 
-    if(req.payload.pinCode != existingUser.pinCode) throw new Error(" Pin code invalid !");
+
+    if(scope == 'MANAGER'){
+
+    }
+    if(scope == 'EMPLOYEE'){
+
+    }
+
+
 
     const hashPassword = await encodedPassword(req.payload.password)
 
@@ -23,12 +33,33 @@ export const createUser = async (req: any) : Promise<User> => {
     return await UserRepository.insert(user);
 }
 
-export const createEmployee = async (req: any) : Promise<User> => {
-    const existingUser = await UserRepository.findByEmail(req.payload.email);
-    if (!existingUser) throw new Error("Your manager need to send you an invitation link first !");
-    if(existingUser.isActive) throw new Error("account already created !");
+export const createEmployee = async (req: any) => {
+    const existingEmployee = await UserRepository.findByEmail(req.payload.email);
+    if (!existingEmployee) throw new Error("Your manager need to send you an invitation link first !");
 
-    if(req.payload.pinCode != existingUser.pinCode) throw new Error(" Pin code invalid !");
+    if(existingEmployee.isActive) throw new Error("account already activated !");
+
+    verificationOfPinCode(req.payload.pinCode,existingEmployee.pinCode);
+
+    const hashPassword = await encodedPassword(req.payload.password)
+
+    let employee: User = {
+        firstName : req.payload.firstName,
+        lastName : req.payload.lastName,
+        email: req.payload.email,
+        password: hashPassword,
+        isActive: true
+    }
+    return await UserRepository.insert(employee);
+
+}
+
+export const createManager = async (req: any) : Promise<User> => {
+    const existingUser = await UserRepository.findByEmail(req.payload.email);
+    if (!existingUser) throw new Error("The administrator need to send you an invitation link first !");
+    if(existingUser.isActive) throw new Error("account already activated !");
+
+    verificationOfPinCode(req.payload.pinCode,existingUser.pinCode);
 
     const hashPassword = await encodedPassword(req.payload.password)
 

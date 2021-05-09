@@ -1,13 +1,22 @@
 import Joi from "joi";
+const passwordComplexity = require("joi-password-complexity");
 
-const PATTERN = "";
+const complexityOptions = {
+    min: 6,
+    max: 20,
+    lowerCase: 1,
+    upperCase: 1,
+    numeric: 1,
+    symbol: 1,
+    requirementCount:4
+};
 
 export const signupValidation = Joi.object({
     email: Joi.string().email().required()
         .description('A valid email')
         .example('example@domain.fr'),
-    password: Joi.string().regex(RegExp(PATTERN))
-        .min(6).max(20).required()
+    password: passwordComplexity(complexityOptions)
+        .required()
         .description('A valid password : ' +
             '- Must contain at least one digit [0-9]\n ' +
             '- Must contain at least one lowercase Latin character [a-z]\n ' +
@@ -32,7 +41,8 @@ export const signinValidation = Joi.object({
     email: Joi.string().email().required()
         .description('A valid Email\'s employee/manager')
         .example('example@domain.fr'),
-    password: Joi.string().min(6).max(20).required()
+    password: Joi.string()
+        .required()
         .description('A valid password')
         .example('valid_Password'),
 }).label('Employee\'s credentials')
