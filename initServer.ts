@@ -69,7 +69,6 @@ export const init = async  () => {
         }
     });
 
-
     server.route({
         method: 'POST',
         path: '/addmanager',
@@ -103,7 +102,6 @@ export const init = async  () => {
 
         }
     });
-
 
     server.route({
         method: 'POST',

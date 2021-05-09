@@ -24,7 +24,7 @@ export default class UserRepository{
         return await call.insert(user);
     }
 
-    static async updateNewEmployee(user: User):Promise<UpdateResult> {
+    static async updateUser(user: User):Promise<UpdateResult> {
         let call = db.get('users');
         return await call.update(
             {email:user.email},

@@ -5,15 +5,17 @@ export default interface UserResponse {
   lastName: string
   email: string
   isActive: boolean
-  role?: string
+  scope?: string
 }
 
 export function userToUserResponse(user: User) {
+  let scope = user.scope?.pop();
+
   return {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
     isActive: user.isActive,
-    role: user.scope
+    scope
   };
 }

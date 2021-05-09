@@ -4,7 +4,6 @@ import User from "../src/models/User";
 import {convertToObject} from "../src/utils/conversion";
 import {Server} from "@hapi/hapi";
 import {init} from "../initServer";
-import hapiAuthJwt = require("@hapi/jwt");
 import env from 'dotenv'
 env.config()
 const FAKER = require('faker')
@@ -742,7 +741,7 @@ describe("Route tests ", ()=> {
             let responseParsed = convertToObject(response.result);
             expect(response.statusCode).toBe(400)
             expect(responseParsed.code).toBe(1)
-            expect(responseParsed.msg).toBe(" Pin code invalid !")
+            expect(responseParsed.msg).toBe("Pin code invalid !")
 
         })
 
@@ -805,7 +804,7 @@ describe("Route tests ", ()=> {
             let responseParsed = convertToObject(response.result);
             expect(response.statusCode).toBe(400)
             expect(responseParsed.code).toBe(1)
-            expect(responseParsed.msg).toBe( "Your manager need to send you an invitation link first !")
+            expect(responseParsed.msg).toBe( "Your manager must send you an invitation link first !")
         })
 
 
@@ -1616,7 +1615,7 @@ describe("Route tests ", ()=> {
             let responseParsed = convertToObject(response.result);
             expect(response.statusCode).toBe(400)
             expect(responseParsed.code).toBe(1)
-            expect(responseParsed.msg).toBe(" Pin code invalid !")
+            expect(responseParsed.msg).toBe("Pin code invalid !")
 
         })
 
@@ -1682,7 +1681,7 @@ describe("Route tests ", ()=> {
             let responseParsed = convertToObject(response.result);
             expect(response.statusCode).toBe(400)
             expect(responseParsed.code).toBe(1)
-            expect(responseParsed.msg).toBe( "The administrator need to send you an invitation link first !")
+            expect(responseParsed.msg).toBe( "The administrator must send you an invitation link first !")
         })
 
     })
@@ -1742,7 +1741,7 @@ describe("Route tests ", ()=> {
         let responseParsed = convertToObject(response.result);
         expect(response.statusCode).toBe(400)
         expect(responseParsed.code).toBe(1)
-        expect(responseParsed.msg).toBe("Your manager need to send you an invitation link first !")
+        expect(responseParsed.msg).toBe("Your manager must send you an invitation link first !")
 
     })
     it("should return 400 when email contains only space",async () => {
